@@ -1,0 +1,15 @@
+
+# Ignore all files with the specified name.
+# Scope is all repo folders.
+killme.sh
+
+# Ignore all files with the specified extension.
+# Scope is all repo folders.
+*.nii.gz
+*.nii
+
+
+# Ignore all files in the 'logs' subfolder.
+data/
+data_64/
+template_64/
