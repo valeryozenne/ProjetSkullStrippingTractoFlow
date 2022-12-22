@@ -14,3 +14,5 @@ data/
 data_64/
 template_64/
 model_64/
+__pycache__/
+__MACOSX/
