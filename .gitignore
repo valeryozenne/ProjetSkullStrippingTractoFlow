@@ -7,12 +7,21 @@ killme.sh
 # Scope is all repo folders.
 *.nii.gz
 *.nii
+*.npy
+*.mat
 
 
 # Ignore all files in the 'logs' subfolder.
 data/
 data_64/
-template_64/
+Figures_backup/
+model_64_backup/
 model_64/
+Prediction/
+Prediction_backup/
+template_64/
+template_64_backup/
+template_64_first/
+template_64_initial/
 __pycache__/
 __MACOSX/
