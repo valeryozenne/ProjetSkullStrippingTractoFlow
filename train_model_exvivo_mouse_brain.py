@@ -35,22 +35,30 @@ list_method=['only_b0', 'only_b0_mean','only_dw_mean', 'only_b0_N4', 'only_b0_me
 epochs=256
 steps_per_epoch=20
 
+for idx_contrast in range(0,2):
 
-for idx_method in range (3,6):
+    for idx_method in range (0,6):
 
-    method_name=list_method[idx_method]
-
-    for idx_contrast in range(0,2):
+        method_name=list_method[idx_method]
+        method_name_for_template=list_method[idx_method%3]
+        #print(method_name_for_template)    
 
         contrast_name=list_contrast[idx_contrast]
         letter_name=list_letter[idx_contrast]
 
         print('method_name', method_name)
-     
-        template = ants.image_read(folder_ex_vivo+'template_64/'+'Gado'+'/MYtemplate0.nii.gz')
-        template_brain_mask = ants.image_read(folder_ex_vivo+'template_64/'+'Gado'+'/MYtemplate0.nii.gz')
+        filename_template=folder_ex_vivo+'template_64/'+contrast_name +'/' + method_name_for_template +'/MYtemplate0.nii.gz'
+        
+        if (os.path.isfile(filename_template) == False):
+            raise Exception('error template filename is not valid')
+        
+        template = ants.image_read(filename_template)
+        template_brain_mask = ants.image_read(filename_template)
         template_size = template.shape
 
+        
+
+        
         ################################################
         #
         #  Create the model and load weights
@@ -111,7 +119,7 @@ for idx_method in range (3,6):
            masks_to_find=folder_ex_vivo+'data_64/'+contrast_name+'/*/DWI/mask_'+letter_name+'*_dwi_0.nii.gz'
 
         elif (method_name == 'only_b0_N4'):
-           images_to_find=folder_ex_vivo+'data_64/'+contrast_name+'/*/DWI/'+letter_name+'*_only_b0_*_N4.nii.gz'
+           images_to_find=folder_ex_vivo+'data_64/'+contrast_name+'/*/DWI/'+letter_name+'*_only_b0_?_N4.nii.gz'
            masks_to_find=folder_ex_vivo+'data_64/'+contrast_name+'/*/DWI/mask_'+letter_name+'*.nii.gz'
            
         elif (method_name == 'only_b0_mean_N4'):    
@@ -142,7 +150,7 @@ for idx_method in range (3,6):
 
         print((image_images_1_ok))
         print((mask_images_1_ok))
-        quit()
+        
         #for ele in images_to_find:
         #    if substring in ele:
         #        print("Found!")

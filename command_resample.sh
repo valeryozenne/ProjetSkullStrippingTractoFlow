@@ -1,7 +1,6 @@
 #!/bin/bash
 
-
-. dependencies.sh
+. dependencies2.sh
 
 # TODO a refaire en améliorant le MASK_INPUT du cas homme
 
@@ -25,6 +24,7 @@ LIST_NAME[0]=b
 LIST_NAME[1]=c
 
 FORCE=0
+FORCE_TEMPLATE_CREATION=0
 
 # on réachantillone à 64
 CreateFolderIfNotExist data_64/
@@ -41,6 +41,9 @@ FOLDER_OUTPUT_DATA=data_64/${DATA}
 CreateFolderIfNotExist ${FOLDER_OUTPUT_DATA}
 
 rm data_64/${DATA}/liste_de_fichier_pour_ants_64.csv
+rm data_64/${DATA}/liste_de_fichier_pour_ants_64_b0_mean.csv
+rm data_64/${DATA}/liste_de_fichier_pour_ants_64_dw_mean.csv
+
 
 NUMBER_OF_SAMPLES=${LIST_SAMPLE[${DATA_INDEX}]}
 LETTER=${LIST_NAME[${DATA_INDEX}]}
@@ -59,16 +62,21 @@ FOLDER_OUTPUT_DWI=${FOLDER_OUTPUT_DATA_NUM}/DWI/
 CreateFolderIfNotExist ${FOLDER_OUTPUT_DWI}
 
 IMG_INPUT=${FOLDER_INPUT_DWI}/${LETTER}10${NUM}_dwi.nii.gz
+IMG_INPUT_STRIDES_OK=${FOLDER_INPUT_DWI}/${LETTER}10${NUM}_dwi_strides_ok.nii.gz
 IMG_INPUT_DENOISED=${FOLDER_INPUT_DWI}/${LETTER}10${NUM}_dwi_denoised.nii.gz
 MASK_INPUT=${FOLDER_INPUT_DWI}/mask_${LETTER}10${NUM}_dwi.nii.gz
 
 CheckFile ${IMG_INPUT}
-CheckFile ${MASK_INPUT} 
-echo ${IMG_INPUT}
-mrinfo ${IMG_INPUT} -size
+
+if [[ ! -f ${IMG_INPUT_STRIDES_OK} ]] || [[ "${FORCE}" = 1 ]] ; then
+mrconvert ${IMG_INPUT} -stride 0,1,2,3 ${IMG_INPUT_STRIDES_OK}
+fi
+
+
+mrinfo ${IMG_INPUT_STRIDES_OK} -size
 
 if [[ ! -f ${IMG_INPUT_DENOISED} ]] || [[ "${FORCE}" = 1 ]] ; then
-dwidenoise ${IMG_INPUT} ${IMG_INPUT_DENOISED}
+dwidenoise ${IMG_INPUT_STRIDES_OK} ${IMG_INPUT_DENOISED}
 fi
 
 IMG_INPUT_DENOISED_ONLY_B0=${FOLDER_INPUT_DWI}/${LETTER}10${NUM}_dwi_denoised_only_b0.nii.gz
@@ -171,19 +179,80 @@ fi
 #mrstats ${IMG_OUTPUT_B0}
 if [[ "${bo_index}" == 0 ]] ; then
 echo ${IMG_OUTPUT_B0} >> data_64/${DATA}/liste_de_fichier_pour_ants_64.csv
+echo ${IMG_OUTPUT_DENOISED_ONLY_B0_MEAN} >> data_64/${DATA}/liste_de_fichier_pour_ants_64_b0_mean.csv
+echo ${IMG_OUTPUT_DENOISED_ONLY_DW_MEAN} >> data_64/${DATA}/liste_de_fichier_pour_ants_64_dw_mean.csv
 fi
 
 done # boucle b0
 
-mrstats ${MASK_OUTPUT_B0}
+#mrstats ${MASK_OUTPUT_B0}
 
 done
 
-#CreateFolderIfNotExist template_64/
-#CreateFolderIfNotExist template_64/${DATA}/
-#FICHIER_TEMPLATE=template_64/${DATA}/MY
-#antsMultivariateTemplateConstruction2.sh -d 3 -i 0 -k 1 -w 1  -c 2 -j 3 -t SyN  -m CC -o ${FICHIER_TEMPLATE}  data_64/${DATA}/liste_de_fichier_pour_ants_64.csv
+CreateFolderIfNotExist template_64/
+CreateFolderIfNotExist template_64/${DATA}/
+CreateFolderIfNotExist template_64/${DATA}/only_b0/
+CreateFolderIfNotExist template_64/${DATA}/only_b0_mean/
+CreateFolderIfNotExist template_64/${DATA}/only_dw_mean/
 
+CreateFolderIfNotExist template_64_initial/
+CreateFolderIfNotExist template_64_initial/${DATA}/
+CreateFolderIfNotExist template_64_initial/${DATA}/only_b0/
+CreateFolderIfNotExist template_64_initial/${DATA}/only_b0_mean/
+CreateFolderIfNotExist template_64_initial/${DATA}/only_dw_mean/
+
+
+DATA_NO_SLASH=$(echo ${DATA} | rev | cut -c 2- | rev ) 
+
+# maintenant on va sanctiariser template_64 en template_64_fist
+# et appliquer la transformation pour avoir un cerveau centré
+TRANSFORM=template_64_initial/${DATA}/initial_transform_${DATA_NO_SLASH}_only_dw_mean.txt
+CheckFile ${TRANSFORM}
+
+
+##
+INPUT_INITIAL=template_64_first/${DATA}/only_b0/MYtemplate0.nii.gz
+REFERENCE=${INPUT_INITIAL}
+OUTPUT_INITIAL=template_64_initial/${DATA}/only_b0/MYtemplate0_initial_resliced.nii.gz
+if [[ ! -f ${OUTPUT_INITIAL} ]] ; then
+logCmd antsApplyTransforms -d 3 -i ${INPUT_INITIAL} -o ${OUTPUT_INITIAL} -r ${REFERENCE} -t ${TRANSFORM} -v
+fi
+##
+INPUT_INITIAL=template_64_first/${DATA}/only_b0_mean/MYtemplate0.nii.gz
+REFERENCE=${INPUT_INITIAL}
+OUTPUT_INITIAL=template_64_initial/${DATA}/only_b0_mean/MYtemplate0_initial_resliced.nii.gz
+if [[ ! -f ${OUTPUT_INITIAL} ]] ; then
+logCmd antsApplyTransforms -d 3 -i ${INPUT_INITIAL} -o ${OUTPUT_INITIAL} -r ${REFERENCE} -t ${TRANSFORM} -v
+fi
+##
+INPUT_INITIAL=template_64_first/${DATA}/only_dw_mean/MYtemplate0.nii.gz
+REFERENCE=${INPUT_INITIAL}
+OUTPUT_INITIAL=template_64_initial/${DATA}/only_dw_mean/MYtemplate0_initial_resliced.nii.gz
+if [[ ! -f ${OUTPUT_INITIAL} ]] ; then
+logCmd antsApplyTransforms -d 3 -i ${INPUT_INITIAL} -o ${OUTPUT_INITIAL} -r ${REFERENCE} -t ${TRANSFORM} -v
+fi
+##
+
+FICHIER_TEMPLATE=template_64/${DATA}/only_b0/MY
+OUTPUT_INITIAL=template_64_initial/${DATA}/only_b0/MYtemplate0_initial_resliced.nii.gz
+CheckFile ${OUTPUT_INITIAL}
+if [[ ! -f ${FICHIER_TEMPLATE}template0.nii.gz ]] || [[ "${FORCE_TEMPLATE_CREATION}" = 1 ]] ; then
+antsMultivariateTemplateConstruction2.sh -d 3 -i 1 -k 1 -w 1  -c 2 -j 10 -t SyN  -m CC -z ${OUTPUT_INITIAL} -y 0 -r 1 -o ${FICHIER_TEMPLATE}  data_64/${DATA}/liste_de_fichier_pour_ants_64.csv
+fi
+
+FICHIER_TEMPLATE=template_64/${DATA}/only_b0_mean/MY
+OUTPUT_INITIAL=template_64_initial/${DATA}/only_b0_mean/MYtemplate0_initial_resliced.nii.gz
+CheckFile ${OUTPUT_INITIAL}
+if [[ ! -f ${FICHIER_TEMPLATE}template0.nii.gz ]] || [[ "${FORCE_TEMPLATE_CREATION}" = 1 ]] ; then
+antsMultivariateTemplateConstruction2.sh -d 3 -i 1 -k 1 -w 1  -c 2 -j 10 -t SyN  -m CC -z ${OUTPUT_INITIAL} -y 0 -r 1 -o ${FICHIER_TEMPLATE}  data_64/${DATA}/liste_de_fichier_pour_ants_64_b0_mean.csv
+fi
+
+FICHIER_TEMPLATE=template_64/${DATA}/only_dw_mean/MY
+OUTPUT_INITIAL=template_64_initial/${DATA}/only_dw_mean/MYtemplate0_initial_resliced.nii.gz
+CheckFile ${OUTPUT_INITIAL}
+if [[ ! -f ${FICHIER_TEMPLATE}template0.nii.gz ]] || [[ "${FORCE_TEMPLATE_CREATION}" = 1 ]] ; then
+antsMultivariateTemplateConstruction2.sh -d 3 -i 1 -k 1 -w 1  -c 2 -j 10 -t SyN  -m CC -z ${OUTPUT_INITIAL} -y 0 -r 1 -o ${FICHIER_TEMPLATE}  data_64/${DATA}/liste_de_fichier_pour_ants_64_dw_mean.csv
+fi
 
 done
 
