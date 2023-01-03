@@ -1,6 +1,6 @@
 #!/bin/bash
 
-. dependencies2.sh
+. dependencies.sh
 
 # TODO a refaire en améliorant le MASK_INPUT du cas homme
 
@@ -23,7 +23,7 @@ LIST_DATA[1]=Sans_Gado/
 LIST_NAME[0]=b
 LIST_NAME[1]=c
 
-FORCE=0
+FORCE=1
 FORCE_TEMPLATE_CREATION=0
 
 # on réachantillone à 64
@@ -69,7 +69,7 @@ MASK_INPUT=${FOLDER_INPUT_DWI}/mask_${LETTER}10${NUM}_dwi.nii.gz
 CheckFile ${IMG_INPUT}
 
 if [[ ! -f ${IMG_INPUT_STRIDES_OK} ]] || [[ "${FORCE}" = 1 ]] ; then
-mrconvert ${IMG_INPUT} -stride 0,1,2,3 ${IMG_INPUT_STRIDES_OK}
+mrconvert ${IMG_INPUT} -stride 1,2,3,4 ${IMG_INPUT_STRIDES_OK}
 fi
 
 

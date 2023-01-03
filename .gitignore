@@ -9,6 +9,7 @@ killme.sh
 *.nii
 *.npy
 *.mat
+*.h5
 
 
 # Ignore all files in the 'logs' subfolder.
@@ -16,7 +17,6 @@ data/
 data_64/
 Figures_backup/
 model_64_backup/
-model_64/
 Prediction/
 Prediction_backup/
 template_64/

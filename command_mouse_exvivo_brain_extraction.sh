@@ -92,9 +92,17 @@ fi
 #mrview ${INPUT} -overlay.load ${OUTPUT_MASK} -overlay.opacity 0.5 -overlay.load ${TRUTH} -overlay.opacity 0.5
 
 if [[ ! -f Figures/figure_brain_segmentation_${CONTRAST}_${NAME}_0000.png ]] || [[ ${FORCE} -eq 1 ]] ;  then
-logCmd mrview ${INPUT}   -overlay.load ${OUTPUT_MASK} -overlay.opacity 0.25 -overlay.colourmap 4 \
+logCmd mrview ${INPUT}   -overlay.load ${OUTPUT_MASK} -overlay.opacity 0.25  -overlay.threshold_min 0.5 -overlay.interpolation 0 -overlay.colourmap 4 \
               -noannotations -mode 2 -capture.folder Figures/ \
               -capture.prefix figure_brain_segmentation_${CONTRAST}_${NAME}_ \
+              -capture.grab  -noannotations  --force  -exit
+fi
+
+
+if [[ ! -f Figures/figure_brain_segmentation_${CONTRAST}_gold_standard_0000.png ]] || [[ ${FORCE} -eq 1 ]] ;  then
+logCmd mrview ${INPUT}   -overlay.load ${TRUTH} -overlay.opacity 0.25  -overlay.threshold_min 0.5 -overlay.interpolation 0 -overlay.colourmap 4 \
+              -noannotations -mode 2 -capture.folder Figures/ \
+              -capture.prefix figure_brain_segmentation_${CONTRAST}_gold_standard_ \
               -capture.grab  -noannotations  --force  -exit
 fi
 
@@ -102,8 +110,8 @@ LABEL1=${OUTPUT_MASK}
 LABEL2=${TRUTH}
 CheckFile ${LABEL1}
 CheckFile ${LABEL2}
-#logCmd ImageMath 3 Tables/table_${CONTRAST}_${NAME}.txt DiceAndMinDistSum ${LABEL1} ${LABEL2}
-#DICE_INI=$(cat ${LIST_NAME[$i]}_Table/test.txt | awk '{print $3}')
+logCmd ImageMath 3 Tables/table_${CONTRAST}_${NAME}.txt DiceAndMinDistSum ${LABEL1} ${LABEL2}
+DICE_INI=$(cat Tables/table_${CONTRAST}_${NAME}.txt | awk '{print $3}')
 
 done 
 
