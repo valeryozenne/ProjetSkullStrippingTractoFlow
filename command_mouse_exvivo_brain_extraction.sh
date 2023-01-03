@@ -18,8 +18,7 @@ CreateFolderIfNotExist Tables/
 
 FORCE=0
 
-#
-SAMPLE=9
+
 
 list_contrast[0]='Gado'
 list_contrast[1]='Sans_Gado'
@@ -36,6 +35,40 @@ list_method[5]='only_dw_mean_N4'
 
 FOLDER_EXVIVO=${IMAGERIE}/DICOM_DATA/2022-12-20_ExVivoBrain/
 
+
+for SAMPLE in {1..9}
+do
+for idx_contrast in 0 1 
+do 
+
+CONTRAST=${list_contrast[${idx_contrast}]}
+LETTER=${list_letter[${idx_contrast}]}
+
+echo ${SAMPLE} ${CONTRAST} ${LETTER}
+
+TRUTH=${FOLDER_EXVIVO}/data/${CONTRAST}/${SAMPLE}/DWI/mask_${LETTER}10${SAMPLE}_dwi.nii.gz
+CheckFile ${TRUTH}
+
+INPUT=${FOLDER_EXVIVO}/data/${CONTRAST}/${SAMPLE}/DWI/${LETTER}10${SAMPLE}_dwi_denoised_only_b0_0.nii.gz
+CheckFile ${INPUT}
+
+CreateFolderIfNotExist Figures_Input/
+
+if [[ ! -f Figures_Input/figure_brain_segmentation_${CONTRAST}_gold_standard_S${SAMPLE}_0000.png ]] || [[ ${FORCE} -eq 1 ]] ;  then
+logCmd mrview ${INPUT}   -overlay.load ${TRUTH} -config MRViewOrthoAsRow 1  -overlay.opacity 0.25  -overlay.threshold_min 0.5 -overlay.interpolation 0 -overlay.colourmap 4 \
+              -noannotations -mode 2 -capture.folder Figures_Input/ \
+              -capture.prefix figure_brain_segmentation_${CONTRAST}_gold_standard_S${SAMPLE}_ \
+              -capture.grab  -noannotations  --force  -exit
+fi
+
+done
+done
+
+
+
+
+#
+SAMPLE=9
 
 for idx_contrast in 0 1 
 do 
@@ -79,6 +112,7 @@ fi
 
 MODEL=${FOLDER_EXVIVO}/model_64/mouseExVivoBrainExtraction_${CONTRAST}_${NAME}_server_dec2022.h5
 OUTPUT_MASK=Prediction/outputMouseExVivoBraintProbabilityMask_${CONTRAST}_${NAME}.nii.gz
+OUTPUT_FINAL_MASK=Prediction/outputMouseExVivoBraintFinalMask_${CONTRAST}_${NAME}.nii.gz
 
 CheckFile ${MODEL}
 CheckFile ${TEMPLATE}
@@ -88,34 +122,38 @@ CheckFile ${INPUT}
 if [[ ! -f ${OUTPUT_MASK} ]] || [[ ${FORCE} -eq 1 ]] ;  then
 logCmd python3 doMouseExVivoBrainExtraction.py ${INPUT} ${OUTPUT_MASK} ${TEMPLATE} ${MODEL}
 fi
-# ajouter la capture avec mrview
-#mrview ${INPUT} -overlay.load ${OUTPUT_MASK} -overlay.opacity 0.5 -overlay.load ${TRUTH} -overlay.opacity 0.5
 
-if [[ ! -f Figures/figure_brain_segmentation_${CONTRAST}_${NAME}_0000.png ]] || [[ ${FORCE} -eq 1 ]] ;  then
-logCmd mrview ${INPUT}   -overlay.load ${OUTPUT_MASK} -overlay.opacity 0.25  -overlay.threshold_min 0.5 -overlay.interpolation 0 -overlay.colourmap 4 \
-              -noannotations -mode 2 -capture.folder Figures/ \
-              -capture.prefix figure_brain_segmentation_${CONTRAST}_${NAME}_ \
-              -capture.grab  -noannotations  --force  -exit
+if [[ ! -f ${OUTPUT_FINAL_MASK} ]] || [[ ${FORCE} -eq 1 ]] ;  then
+logCmd ThresholdImage 3 ${OUTPUT_MASK} ${OUTPUT_FINAL_MASK} 0.5 1 1 0
+logCmd ImageMath 3 ${OUTPUT_FINAL_MASK} GetLargestComponent ${OUTPUT_FINAL_MASK}
 fi
 
 
-if [[ ! -f Figures/figure_brain_segmentation_${CONTRAST}_gold_standard_0000.png ]] || [[ ${FORCE} -eq 1 ]] ;  then
-logCmd mrview ${INPUT}   -overlay.load ${TRUTH} -overlay.opacity 0.25  -overlay.threshold_min 0.5 -overlay.interpolation 0 -overlay.colourmap 4 \
+if [[ ! -f Figures/figure_brain_segmentation_${CONTRAST}_${NAME}_S${SAMPLE}_0000.png ]] || [[ ${FORCE} -eq 1 ]] ;  then
+logCmd mrview ${INPUT}  -config MRViewOrthoAsRow 1   -overlay.load ${OUTPUT_FINAL_MASK} -overlay.opacity 0.25  -overlay.threshold_min 0.5 -overlay.interpolation 0 -overlay.colourmap 4 \
               -noannotations -mode 2 -capture.folder Figures/ \
-              -capture.prefix figure_brain_segmentation_${CONTRAST}_gold_standard_ \
+              -capture.prefix figure_brain_segmentation_${CONTRAST}_${NAME}_S${SAMPLE}_ \
               -capture.grab  -noannotations  --force  -exit
+
+
+
+
 fi
+
+
 
 LABEL1=${OUTPUT_MASK}
 LABEL2=${TRUTH}
 CheckFile ${LABEL1}
 CheckFile ${LABEL2}
-logCmd ImageMath 3 Tables/table_${CONTRAST}_${NAME}.txt DiceAndMinDistSum ${LABEL1} ${LABEL2}
-DICE_INI=$(cat Tables/table_${CONTRAST}_${NAME}.txt | awk '{print $3}')
+#logCmd ImageMath 3 Tables/table_${CONTRAST}_${NAME}.txt DiceAndMinDistSum ${LABEL1} ${LABEL2}
+#DICE_INI=$(cat Tables/table_${CONTRAST}_${NAME}.txt | awk '{print $3}')
 
 done 
 
 done
+
+
 
 
 

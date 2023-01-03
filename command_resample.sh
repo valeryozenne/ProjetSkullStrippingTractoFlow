@@ -69,15 +69,18 @@ MASK_INPUT=${FOLDER_INPUT_DWI}/mask_${LETTER}10${NUM}_dwi.nii.gz
 CheckFile ${IMG_INPUT}
 
 if [[ ! -f ${IMG_INPUT_STRIDES_OK} ]] || [[ "${FORCE}" = 1 ]] ; then
-mrconvert ${IMG_INPUT} -stride 1,2,3,4 ${IMG_INPUT_STRIDES_OK}
+logCmd mrconvert ${IMG_INPUT} -strides 1,2,3,4 ${IMG_INPUT_STRIDES_OK} --force
 fi
 
+CheckStrides ${IMG_INPUT_STRIDES_OK}
+logCmd mrinfo ${IMG_INPUT_STRIDES_OK} -size
 
-mrinfo ${IMG_INPUT_STRIDES_OK} -size
 
 if [[ ! -f ${IMG_INPUT_DENOISED} ]] || [[ "${FORCE}" = 1 ]] ; then
-dwidenoise ${IMG_INPUT_STRIDES_OK} ${IMG_INPUT_DENOISED}
+logCmd dwidenoise ${IMG_INPUT_STRIDES_OK} ${IMG_INPUT_DENOISED}  --force
 fi
+
+CheckStrides ${IMG_INPUT_DENOISED}
 
 IMG_INPUT_DENOISED_ONLY_B0=${FOLDER_INPUT_DWI}/${LETTER}10${NUM}_dwi_denoised_only_b0.nii.gz
 IMG_INPUT_DENOISED_ONLY_DW=${FOLDER_INPUT_DWI}/${LETTER}10${NUM}_dwi_denoised_only_dw.nii.gz
@@ -175,6 +178,10 @@ fi
 if [[ ! -f ${MASK_OUTPUT_B0} ]] || [[ "${FORCE}" = 1 ]] ; then
 logCmd ResampleImage 3 ${MASK_INPUT_B0} ${MASK_OUTPUT_B0} 64x64x64 1 1
 fi
+
+CheckStrides ${IMG_OUTPUT_B0}
+CheckStrides ${IMG_OUTPUT_DENOISED_ONLY_B0_MEAN}
+CheckStrides ${IMG_OUTPUT_DENOISED_ONLY_DW_MEAN}
 
 #mrstats ${IMG_OUTPUT_B0}
 if [[ "${bo_index}" == 0 ]] ; then

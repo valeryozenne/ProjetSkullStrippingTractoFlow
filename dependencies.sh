@@ -4,6 +4,33 @@
 # usefull link : https://opensource.com/article/19/10/programming-bash-loops
 
 
+function CheckStrides() {
+    
+    NDIM=$(mrinfo $1 -ndim)
+    STRIDES=$(mrinfo $1 -strides)
+
+    echo $NDIM" ->  "$STRIDES
+    if [[ ${NDIM} -eq 3 ]]; then
+    #echo 'ici 3'
+    if [ "${STRIDES}" != "1 2 3" ];  then
+    echo "ERROR: $1 strides wrong $STRIDES."
+    exit
+    fi
+    elif [[ ${NDIM} -eq 4 ]]; then 
+    #echo 'ici 4'
+    if [ "${STRIDES}" != "1 2 3 4" ];  then
+    echo "ERROR: $1 strides wrong $STRIDES."
+    exit
+    fi
+    elif [[ ${NDIM} -eq 5 ]]; then    
+    #echo 'ici 5'
+    if [ "${STRIDES}" != "1 2 3 4 5" ];  then
+    echo "ERROR: $1 strides wrong $STRIDES."
+    exit
+    fi
+    fi
+
+}
 
 
 
