@@ -23,7 +23,10 @@ LIST_DATA[1]=Sans_Gado/
 LIST_NAME[0]=b
 LIST_NAME[1]=c
 
-FORCE=1
+FORCE=0
+MAKE_TEMPLATE_INITIAL=0
+MAKE_TEMPLATE_ALIGNED=0
+MAKE_TEMPLATE_FINAL=1
 FORCE_TEMPLATE_CREATION=0
 
 # on réachantillone à 64
@@ -43,6 +46,10 @@ CreateFolderIfNotExist ${FOLDER_OUTPUT_DATA}
 rm data_64/${DATA}/liste_de_fichier_pour_ants_64.csv
 rm data_64/${DATA}/liste_de_fichier_pour_ants_64_b0_mean.csv
 rm data_64/${DATA}/liste_de_fichier_pour_ants_64_dw_mean.csv
+
+rm data/${DATA}/liste_de_fichier_pour_ants_raw.csv
+rm data/${DATA}/liste_de_fichier_pour_ants_raw_b0_mean.csv
+rm data/${DATA}/liste_de_fichier_pour_ants_raw_dw_mean.csv
 
 
 NUMBER_OF_SAMPLES=${LIST_SAMPLE[${DATA_INDEX}]}
@@ -156,7 +163,7 @@ IMG_OUTPUT_B0_N4=${FOLDER_OUTPUT_DWI}/${LETTER}10${NUM}_dwi_denoised_only_b0_${b
 
 
 if [[ ! -f ${IMG_INPUT_B0} ]] || [[ "${FORCE}" = 1 ]] ; then
-logCmd mrconvert ${IMG_INPUT_DENOISED_ONLY_B0} -coord 3 ${bo_index} -axes 0,1,2 ${IMG_INPUT_B0}
+logCmd mrconvert ${IMG_INPUT_DENOISED_ONLY_B0} -coord 3 ${bo_index} -axes 0,1,2 ${IMG_INPUT_B0} --force
 fi
 
 if [[ ! -f ${IMG_INPUT_B0_N4} ]] || [[ "${FORCE}" = 1 ]] ; then
@@ -185,9 +192,13 @@ CheckStrides ${IMG_OUTPUT_DENOISED_ONLY_DW_MEAN}
 
 #mrstats ${IMG_OUTPUT_B0}
 if [[ "${bo_index}" == 0 ]] ; then
-echo ${IMG_OUTPUT_B0} >> data_64/${DATA}/liste_de_fichier_pour_ants_64.csv
-echo ${IMG_OUTPUT_DENOISED_ONLY_B0_MEAN} >> data_64/${DATA}/liste_de_fichier_pour_ants_64_b0_mean.csv
-echo ${IMG_OUTPUT_DENOISED_ONLY_DW_MEAN} >> data_64/${DATA}/liste_de_fichier_pour_ants_64_dw_mean.csv
+echo ${IMG_OUTPUT_B0_N4} >> data_64/${DATA}/liste_de_fichier_pour_ants_64.csv
+echo ${IMG_OUTPUT_DENOISED_ONLY_B0_MEAN_N4} >> data_64/${DATA}/liste_de_fichier_pour_ants_64_b0_mean.csv
+echo ${IMG_OUTPUT_DENOISED_ONLY_DW_MEAN_N4} >> data_64/${DATA}/liste_de_fichier_pour_ants_64_dw_mean.csv
+
+echo ${IMG_INPUT_B0_N4} >> data/${DATA}/liste_de_fichier_pour_ants_raw.csv
+echo ${IMG_INPUT_DENOISED_ONLY_B0_MEAN_N4} >> data/${DATA}/liste_de_fichier_pour_ants_raw_b0_mean.csv
+echo ${IMG_INPUT_DENOISED_ONLY_DW_MEAN_N4} >> data/${DATA}/liste_de_fichier_pour_ants_raw_dw_mean.csv
 fi
 
 done # boucle b0
@@ -196,69 +207,198 @@ done # boucle b0
 
 done
 
-CreateFolderIfNotExist template_64/
-CreateFolderIfNotExist template_64/${DATA}/
-CreateFolderIfNotExist template_64/${DATA}/only_b0/
-CreateFolderIfNotExist template_64/${DATA}/only_b0_mean/
-CreateFolderIfNotExist template_64/${DATA}/only_dw_mean/
 
-CreateFolderIfNotExist template_64_initial/
-CreateFolderIfNotExist template_64_initial/${DATA}/
-CreateFolderIfNotExist template_64_initial/${DATA}/only_b0/
-CreateFolderIfNotExist template_64_initial/${DATA}/only_b0_mean/
-CreateFolderIfNotExist template_64_initial/${DATA}/only_dw_mean/
+TEMPLATE_FOLDER=template_64
+TEMPLATE_ALIGNED_FOLDER=template_64_aligned
+TEMPLATE_INITIAL_FOLDER=template_64_initial
 
+CreateFolderIfNotExist ${TEMPLATE_INITIAL_FOLDER}/
+CreateFolderIfNotExist ${TEMPLATE_INITIAL_FOLDER}/${DATA}/
+CreateFolderIfNotExist ${TEMPLATE_INITIAL_FOLDER}/${DATA}/only_b0/
+CreateFolderIfNotExist ${TEMPLATE_INITIAL_FOLDER}/${DATA}/only_b0_mean/
+CreateFolderIfNotExist ${TEMPLATE_INITIAL_FOLDER}/${DATA}/only_dw_mean/
+
+CreateFolderIfNotExist ${TEMPLATE_ALIGNED_FOLDER}/
+CreateFolderIfNotExist ${TEMPLATE_ALIGNED_FOLDER}/${DATA}/
+CreateFolderIfNotExist ${TEMPLATE_ALIGNED_FOLDER}/${DATA}/only_b0/
+CreateFolderIfNotExist ${TEMPLATE_ALIGNED_FOLDER}/${DATA}/only_b0_mean/
+CreateFolderIfNotExist ${TEMPLATE_ALIGNED_FOLDER}/${DATA}/only_dw_mean/
+
+CreateFolderIfNotExist ${TEMPLATE_FOLDER}/
+CreateFolderIfNotExist ${TEMPLATE_FOLDER}/${DATA}/
+CreateFolderIfNotExist ${TEMPLATE_FOLDER}/${DATA}/only_b0/
+CreateFolderIfNotExist ${TEMPLATE_FOLDER}/${DATA}/only_b0_mean/
+CreateFolderIfNotExist ${TEMPLATE_FOLDER}/${DATA}/only_dw_mean/
+
+
+if [[ ${MAKE_TEMPLATE_INITIAL} -eq 1 ]] ; then
+
+FICHIER_TEMPLATE=${TEMPLATE_INITIAL_FOLDER}/${DATA}/only_b0/MY
+if [[ ! -f ${FICHIER_TEMPLATE}template0.nii.gz ]] || [[ "${FORCE_TEMPLATE_CREATION}" = 1 ]] ; then
+antsMultivariateTemplateConstruction2.sh -d 3 -i 4 -k 1 -w 1  -c 2 -j 10 -t SyN  -m CC -o ${FICHIER_TEMPLATE}  data_64/${DATA}/liste_de_fichier_pour_ants_64.csv
+fi
+
+FICHIER_TEMPLATE=${TEMPLATE_INITIAL_FOLDER}/${DATA}/only_b0_mean/MY
+if [[ ! -f ${FICHIER_TEMPLATE}template0.nii.gz ]] || [[ "${FORCE_TEMPLATE_CREATION}" = 1 ]] ; then
+antsMultivariateTemplateConstruction2.sh -d 3 -i 4 -k 1 -w 1  -c 2 -j 10 -t SyN  -m CC -o ${FICHIER_TEMPLATE}  data_64/${DATA}/liste_de_fichier_pour_ants_64_b0_mean.csv
+fi
+
+FICHIER_TEMPLATE=${TEMPLATE_INITIAL_FOLDER}/${DATA}/only_dw_mean/MY
+if [[ ! -f ${FICHIER_TEMPLATE}template0.nii.gz ]] || [[ "${FORCE_TEMPLATE_CREATION}" = 1 ]] ; then
+antsMultivariateTemplateConstruction2.sh -d 3 -i 4 -k 1 -w 1  -c 2 -j 10 -t SyN  -m CC -o ${FICHIER_TEMPLATE}  data_64/${DATA}/liste_de_fichier_pour_ants_64_dw_mean.csv
+fi
+
+fi
+
+
+TEMPLATE_FOLDER=template_raw
+TEMPLATE_ALIGNED_FOLDER=template_raw_aligned
+TEMPLATE_INITIAL_FOLDER=template_raw_initial
+
+CreateFolderIfNotExist ${TEMPLATE_INITIAL_FOLDER}/
+CreateFolderIfNotExist ${TEMPLATE_INITIAL_FOLDER}/${DATA}/
+CreateFolderIfNotExist ${TEMPLATE_INITIAL_FOLDER}/${DATA}/only_b0/
+CreateFolderIfNotExist ${TEMPLATE_INITIAL_FOLDER}/${DATA}/only_b0_mean/
+CreateFolderIfNotExist ${TEMPLATE_INITIAL_FOLDER}/${DATA}/only_dw_mean/
+
+CreateFolderIfNotExist ${TEMPLATE_ALIGNED_FOLDER}/
+CreateFolderIfNotExist ${TEMPLATE_ALIGNED_FOLDER}/${DATA}/
+CreateFolderIfNotExist ${TEMPLATE_ALIGNED_FOLDER}/${DATA}/only_b0/
+CreateFolderIfNotExist ${TEMPLATE_ALIGNED_FOLDER}/${DATA}/only_b0_mean/
+CreateFolderIfNotExist ${TEMPLATE_ALIGNED_FOLDER}/${DATA}/only_dw_mean/
+
+CreateFolderIfNotExist ${TEMPLATE_FOLDER}/
+CreateFolderIfNotExist ${TEMPLATE_FOLDER}/${DATA}/
+CreateFolderIfNotExist ${TEMPLATE_FOLDER}/${DATA}/only_b0/
+CreateFolderIfNotExist ${TEMPLATE_FOLDER}/${DATA}/only_b0_mean/
+CreateFolderIfNotExist ${TEMPLATE_FOLDER}/${DATA}/only_dw_mean/
+
+if [[ ${MAKE_TEMPLATE_INITIAL} -eq 1 ]] ; then
+
+FICHIER_TEMPLATE=${TEMPLATE_INITIAL_FOLDER}/${DATA}/only_b0/MY
+if [[ ! -f ${FICHIER_TEMPLATE}template0.nii.gz ]] || [[ "${FORCE_TEMPLATE_CREATION}" = 1 ]] ; then
+antsMultivariateTemplateConstruction2.sh -d 3 -i 4 -k 1 -w 1  -c 2 -j 10 -t SyN  -m CC -o ${FICHIER_TEMPLATE}  data/${DATA}/liste_de_fichier_pour_ants_raw.csv
+fi
+
+FICHIER_TEMPLATE=${TEMPLATE_INITIAL_FOLDER}/${DATA}/only_b0_mean/MY
+if [[ ! -f ${FICHIER_TEMPLATE}template0.nii.gz ]] || [[ "${FORCE_TEMPLATE_CREATION}" = 1 ]] ; then
+antsMultivariateTemplateConstruction2.sh -d 3 -i 4 -k 1 -w 1  -c 2 -j 10 -t SyN  -m CC -o ${FICHIER_TEMPLATE}  data/${DATA}/liste_de_fichier_pour_ants_raw_b0_mean.csv
+fi
+
+FICHIER_TEMPLATE=${TEMPLATE_INITIAL_FOLDER}/${DATA}/only_dw_mean/MY
+if [[ ! -f ${FICHIER_TEMPLATE}template0.nii.gz ]] || [[ "${FORCE_TEMPLATE_CREATION}" = 1 ]] ; then
+antsMultivariateTemplateConstruction2.sh -d 3 -i 4 -k 1 -w 1  -c 2 -j 10 -t SyN  -m CC -o ${FICHIER_TEMPLATE}  data/${DATA}/liste_de_fichier_pour_ants_raw_dw_mean.csv
+fi
+
+fi
+
+
+
+
+if [[ ${MAKE_TEMPLATE_ALIGNED} -eq 1 ]] ; then
 
 DATA_NO_SLASH=$(echo ${DATA} | rev | cut -c 2- | rev ) 
 
+ 
 # maintenant on va sanctiariser template_64 en template_64_fist
 # et appliquer la transformation pour avoir un cerveau centré
-TRANSFORM=template_64_initial/${DATA}/initial_transform_${DATA_NO_SLASH}_only_dw_mean.txt
+TRANSFORM=transform_64/${DATA}/initial_transform_${DATA_NO_SLASH}_only_dw_mean.txt
 CheckFile ${TRANSFORM}
+echo ${TRANSFORM}
 
+
+# versus 64
+TEMPLATE_INITIAL_FOLDER=template_64_initial
+TEMPLATE_ALIGNED_FOLDER=template_64_aligned
 
 ##
-INPUT_INITIAL=template_64_first/${DATA}/only_b0/MYtemplate0.nii.gz
+INPUT_INITIAL=${TEMPLATE_INITIAL_FOLDER}/${DATA}/only_b0/MYtemplate0.nii.gz
 REFERENCE=${INPUT_INITIAL}
-OUTPUT_INITIAL=template_64_initial/${DATA}/only_b0/MYtemplate0_initial_resliced.nii.gz
-if [[ ! -f ${OUTPUT_INITIAL} ]] ; then
-logCmd antsApplyTransforms -d 3 -i ${INPUT_INITIAL} -o ${OUTPUT_INITIAL} -r ${REFERENCE} -t ${TRANSFORM} -v
+OUTPUT_ALIGNED=${TEMPLATE_ALIGNED_FOLDER}/${DATA}/only_b0/MYtemplate0_initial_aligned.nii.gz
+if [[ ! -f ${OUTPUT_ALIGNED} ]] ; then
+logCmd antsApplyTransforms -d 3 -i ${INPUT_INITIAL} -o ${OUTPUT_ALIGNED} -r ${REFERENCE} -t ${TRANSFORM} -v
 fi
 ##
-INPUT_INITIAL=template_64_first/${DATA}/only_b0_mean/MYtemplate0.nii.gz
+INPUT_INITIAL=${TEMPLATE_INITIAL_FOLDER}/${DATA}/only_b0_mean/MYtemplate0.nii.gz
 REFERENCE=${INPUT_INITIAL}
-OUTPUT_INITIAL=template_64_initial/${DATA}/only_b0_mean/MYtemplate0_initial_resliced.nii.gz
-if [[ ! -f ${OUTPUT_INITIAL} ]] ; then
-logCmd antsApplyTransforms -d 3 -i ${INPUT_INITIAL} -o ${OUTPUT_INITIAL} -r ${REFERENCE} -t ${TRANSFORM} -v
+OUTPUT_ALIGNED=${TEMPLATE_ALIGNED_FOLDER}/${DATA}/only_b0_mean/MYtemplate0_initial_aligned.nii.gz
+if [[ ! -f ${OUTPUT_ALIGNED} ]] ; then
+logCmd antsApplyTransforms -d 3 -i ${INPUT_INITIAL} -o ${OUTPUT_ALIGNED} -r ${REFERENCE} -t ${TRANSFORM} -v
 fi
 ##
-INPUT_INITIAL=template_64_first/${DATA}/only_dw_mean/MYtemplate0.nii.gz
+INPUT_INITIAL=${TEMPLATE_INITIAL_FOLDER}/${DATA}/only_dw_mean/MYtemplate0.nii.gz
 REFERENCE=${INPUT_INITIAL}
-OUTPUT_INITIAL=template_64_initial/${DATA}/only_dw_mean/MYtemplate0_initial_resliced.nii.gz
-if [[ ! -f ${OUTPUT_INITIAL} ]] ; then
-logCmd antsApplyTransforms -d 3 -i ${INPUT_INITIAL} -o ${OUTPUT_INITIAL} -r ${REFERENCE} -t ${TRANSFORM} -v
+OUTPUT_ALIGNED=${TEMPLATE_ALIGNED_FOLDER}/${DATA}/only_dw_mean/MYtemplate0_initial_aligned.nii.gz
+if [[ ! -f ${OUTPUT_ALIGNED} ]] ; then
+logCmd antsApplyTransforms -d 3 -i ${INPUT_INITIAL} -o ${OUTPUT_ALIGNED} -r ${REFERENCE} -t ${TRANSFORM} -v
 fi
 ##
 
-FICHIER_TEMPLATE=template_64/${DATA}/only_b0/MY
-OUTPUT_INITIAL=template_64_initial/${DATA}/only_b0/MYtemplate0_initial_resliced.nii.gz
-CheckFile ${OUTPUT_INITIAL}
-if [[ ! -f ${FICHIER_TEMPLATE}template0.nii.gz ]] || [[ "${FORCE_TEMPLATE_CREATION}" = 1 ]] ; then
-antsMultivariateTemplateConstruction2.sh -d 3 -i 1 -k 1 -w 1  -c 2 -j 10 -t SyN  -m CC -z ${OUTPUT_INITIAL} -y 0 -r 1 -o ${FICHIER_TEMPLATE}  data_64/${DATA}/liste_de_fichier_pour_ants_64.csv
+###
+# version raw
+###
+
+TEMPLATE_INITIAL_FOLDER=template_raw_initial
+TEMPLATE_ALIGNED_FOLDER=template_raw_aligned
+
+##
+INPUT_INITIAL=${TEMPLATE_INITIAL_FOLDER}/${DATA}/only_b0/MYtemplate0.nii.gz
+REFERENCE=${INPUT_INITIAL}
+OUTPUT_ALIGNED=${TEMPLATE_ALIGNED_FOLDER}/${DATA}/only_b0/MYtemplate0_initial_aligned.nii.gz
+if [[ ! -f ${OUTPUT_ALIGNED} ]] ; then
+logCmd antsApplyTransforms -d 3 -i ${INPUT_INITIAL} -o ${OUTPUT_ALIGNED} -r ${REFERENCE} -t ${TRANSFORM} -v
+fi
+##
+INPUT_INITIAL=${TEMPLATE_INITIAL_FOLDER}/${DATA}/only_b0_mean/MYtemplate0.nii.gz
+REFERENCE=${INPUT_INITIAL}
+OUTPUT_ALIGNED=${TEMPLATE_ALIGNED_FOLDER}/${DATA}/only_b0_mean/MYtemplate0_initial_aligned.nii.gz
+if [[ ! -f ${OUTPUT_ALIGNED} ]] ; then
+logCmd antsApplyTransforms -d 3 -i ${INPUT_INITIAL} -o ${OUTPUT_ALIGNED} -r ${REFERENCE} -t ${TRANSFORM} -v
+fi
+##
+INPUT_INITIAL=${TEMPLATE_INITIAL_FOLDER}/${DATA}/only_dw_mean/MYtemplate0.nii.gz
+REFERENCE=${INPUT_INITIAL}
+OUTPUT_ALIGNED=${TEMPLATE_ALIGNED_FOLDER}/${DATA}/only_dw_mean/MYtemplate0_initial_aligned.nii.gz
+if [[ ! -f ${OUTPUT_ALIGNED} ]] ; then
+logCmd antsApplyTransforms -d 3 -i ${INPUT_INITIAL} -o ${OUTPUT_ALIGNED} -r ${REFERENCE} -t ${TRANSFORM} -v
+fi
+##
+
 fi
 
-FICHIER_TEMPLATE=template_64/${DATA}/only_b0_mean/MY
-OUTPUT_INITIAL=template_64_initial/${DATA}/only_b0_mean/MYtemplate0_initial_resliced.nii.gz
-CheckFile ${OUTPUT_INITIAL}
+
+
+
+
+if [[ ${MAKE_TEMPLATE_FINAL} -eq 1 ]] ; then
+
+
+TEMPLATE_FOLDER=template_64
+TEMPLATE_ALIGNED_FOLDER=template_64_aligned
+TEMPLATE_INITIAL_FOLDER=template_64_initial
+
+
+FICHIER_TEMPLATE=${TEMPLATE_FOLDER}/${DATA}/only_b0/MY
+INITIAL_TEMPLATE=${TEMPLATE_ALIGNED_FOLDER}/${DATA}/only_b0/MYtemplate0_initial_aligned.nii.gz
+CheckFile ${INITIAL_TEMPLATE}
 if [[ ! -f ${FICHIER_TEMPLATE}template0.nii.gz ]] || [[ "${FORCE_TEMPLATE_CREATION}" = 1 ]] ; then
-antsMultivariateTemplateConstruction2.sh -d 3 -i 1 -k 1 -w 1  -c 2 -j 10 -t SyN  -m CC -z ${OUTPUT_INITIAL} -y 0 -r 1 -o ${FICHIER_TEMPLATE}  data_64/${DATA}/liste_de_fichier_pour_ants_64_b0_mean.csv
+antsMultivariateTemplateConstruction2.sh -d 3 -i 4 -k 1 -w 1  -c 2 -j 10 -t SyN  -m CC -z ${INITIAL_TEMPLATE} -y 0 -r 1 -o ${FICHIER_TEMPLATE}  data_64/${DATA}/liste_de_fichier_pour_ants_64.csv
 fi
 
-FICHIER_TEMPLATE=template_64/${DATA}/only_dw_mean/MY
-OUTPUT_INITIAL=template_64_initial/${DATA}/only_dw_mean/MYtemplate0_initial_resliced.nii.gz
-CheckFile ${OUTPUT_INITIAL}
+FICHIER_TEMPLATE=${TEMPLATE_FOLDER}/${DATA}/only_b0_mean/MY
+INITIAL_TEMPLATE=${TEMPLATE_ALIGNED_FOLDER}/${DATA}/only_b0_mean/MYtemplate0_initial_aligned.nii.gz
+CheckFile ${INITIAL_TEMPLATE}
 if [[ ! -f ${FICHIER_TEMPLATE}template0.nii.gz ]] || [[ "${FORCE_TEMPLATE_CREATION}" = 1 ]] ; then
-antsMultivariateTemplateConstruction2.sh -d 3 -i 1 -k 1 -w 1  -c 2 -j 10 -t SyN  -m CC -z ${OUTPUT_INITIAL} -y 0 -r 1 -o ${FICHIER_TEMPLATE}  data_64/${DATA}/liste_de_fichier_pour_ants_64_dw_mean.csv
+antsMultivariateTemplateConstruction2.sh -d 3 -i 4 -k 1 -w 1  -c 2 -j 10 -t SyN  -m CC -z ${INITIAL_TEMPLATE} -y 0 -r 1 -o ${FICHIER_TEMPLATE}  data_64/${DATA}/liste_de_fichier_pour_ants_64_b0_mean.csv
+fi
+
+FICHIER_TEMPLATE=${TEMPLATE_FOLDER}/${DATA}/only_dw_mean/MY
+INITIAL_TEMPLATE=${TEMPLATE_ALIGNED_FOLDER}/${DATA}/only_dw_mean/MYtemplate0_initial_aligned.nii.gz
+CheckFile ${INITIAL_TEMPLATE}
+if [[ ! -f ${FICHIER_TEMPLATE}template0.nii.gz ]] || [[ "${FORCE_TEMPLATE_CREATION}" = 1 ]] ; then
+antsMultivariateTemplateConstruction2.sh -d 3 -i 4 -k 1 -w 1  -c 2 -j 10 -t SyN  -m CC -z ${INITIAL_TEMPLATE} -y 0 -r 1 -o ${FICHIER_TEMPLATE}  data_64/${DATA}/liste_de_fichier_pour_ants_64_dw_mean.csv
+fi
+
 fi
 
 done

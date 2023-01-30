@@ -110,7 +110,7 @@ B) Le jeux de données Sans Gado contient une image / une donnée corrompue. Il 
 ![example_loss_probleme](model_64/fig_loss_Sans_Gado_only_b0_mean_N42022-12-29-05-24-44256_steps_per_epoch_20.png)
 
 
-###  Prédiction
+### Prédiction
 
 Légende: Magnitude image with final label mask as overlay
 

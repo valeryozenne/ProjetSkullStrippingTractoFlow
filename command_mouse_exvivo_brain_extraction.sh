@@ -110,7 +110,7 @@ INPUT=${FOLDER_EXVIVO}/data/${CONTRAST}/${SAMPLE}/DWI/${LETTER}10${SAMPLE}_dwi_d
 TEMPLATE=${FOLDER_EXVIVO}/template_64/${CONTRAST}/only_dw_mean/MYtemplate0.nii.gz
 fi
 
-MODEL=${FOLDER_EXVIVO}/model_64/mouseExVivoBrainExtraction_${CONTRAST}_${NAME}_server_dec2022.h5
+MODEL=${FOLDER_EXVIVO}/model_64/mouseExVivoBrainExtraction_${CONTRAST}_${NAME}_server_jan2023.h5
 OUTPUT_MASK=Prediction/outputMouseExVivoBraintProbabilityMask_${CONTRAST}_${NAME}.nii.gz
 OUTPUT_FINAL_MASK=Prediction/outputMouseExVivoBraintFinalMask_${CONTRAST}_${NAME}.nii.gz
 
@@ -142,12 +142,16 @@ fi
 
 
 
-LABEL1=${OUTPUT_MASK}
+LABEL1=${OUTPUT_FINAL_MASK}
 LABEL2=${TRUTH}
 CheckFile ${LABEL1}
 CheckFile ${LABEL2}
-#logCmd ImageMath 3 Tables/table_${CONTRAST}_${NAME}.txt DiceAndMinDistSum ${LABEL1} ${LABEL2}
-#DICE_INI=$(cat Tables/table_${CONTRAST}_${NAME}.txt | awk '{print $3}')
+
+#mrinfo ${LABEL1}
+#mrinfo ${LABEL2}
+logCmd ImageMath 3 Tables/table_${CONTRAST}_${NAME}.txt DiceAndMinDistSum ${LABEL1} ${LABEL2}
+cat Tables/table_${CONTRAST}_${NAME}.txt
+DICE_INI=$(cat Tables/table_${CONTRAST}_${NAME}.txt | awk '{print $3}')
 
 done 
 
