@@ -15,6 +15,8 @@ killme.sh
 # Ignore all files in the 'logs' subfolder.
 data/
 data_64/
+all/
+all_64/
 new/
 new_64/
 Figures_backup/
@@ -28,3 +30,6 @@ template_64_initial/
 template_raw_initial/
 __pycache__/
 __MACOSX/
+modelall_64/
+template_all64_b0_initial/
+template_all64_initial/
